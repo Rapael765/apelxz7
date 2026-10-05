@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<title>o'tok</title>
+<meta name="description" content="o'tok — video pendek, live, dan komunitas.">
+<meta property="og:title" content="o'tok">
+<meta property="og:description" content="Tonton, unggah, dan live di o'tok.">
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/icon.svg">
+<link rel="stylesheet" href="/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/livekit-client@2/dist/livekit-client.umd.min.js" defer></script>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="lens" x="0" y="0" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency=".012 .022" numOctaves="2" seed="4" result="n"/>
+    <feGaussianBlur in="n" stdDeviation="2" result="nb"/>
+    <feDisplacementMap in="SourceGraphic" in2="nb" scale="28" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
+
+<div id="app">
+  <!-- Beranda -->
+  <section id="v-home" class="view active">
+    <div class="topbar">
+      <div class="logo" aria-label="o'tok">o<i>'</i>tok</div>
+      <div class="tabs" role="tablist">
+        <button data-tab="follow" role="tab">Mengikuti</button>
+        <button data-tab="fyp" class="on" role="tab">Untuk Anda</button>
+      </div>
+      <div class="tools">
+        <button id="btn-sound" aria-label="Suara"></button>
+        <button id="btn-search" aria-label="Jelajah" data-ic="search"></button>
+      </div>
+    </div>
+    <div class="feed" id="feed"></div>
+  </section>
+
+  <!-- Jelajah -->
+  <section id="v-explore" class="view">
+    <div class="page-head"><div class="page-title">Jelajah</div></div>
+    <div class="scroll">
+      <label class="search"><span data-ic="search"></span><input id="q" placeholder="Cari video, #tagar, atau @kreator" autocomplete="off"></label>
+      <div class="chips" id="trending"></div>
+      <div class="tiles" id="explore-grid"></div>
+    </div>
+  </section>
+
+  <!-- Live -->
+  <section id="v-live" class="view">
+    <div class="page-head"><div class="page-title">Live</div><button class="btn sm" id="btn-golive"><span data-ic="live"></span>Mulai live</button></div>
+    <div class="scroll"><div class="grid2" id="live-grid"></div><div id="live-empty" class="empty"></div></div>
+  </section>
+
+  <!-- Inbox -->
+  <section id="v-inbox" class="view">
+    <div class="page-head"><div class="page-title">Inbox</div></div>
+    <div class="scroll">
+      <div class="chips" id="inbox-chips">
+        <button data-f="all" class="on">Semua</button><button data-f="like">Suka</button><button data-f="comment">Komentar</button><button data-f="follow">Pengikut</button>
+      </div>
+      <div id="inbox-list"></div>
+    </div>
+  </section>
+
+  <!-- Profil -->
+  <section id="v-profile" class="view">
+    <button class="round glass back" id="profile-back" aria-label="Kembali" data-ic="back"></button>
+    <div class="scroll" style="padding-top:34px">
+      <div class="me-head" id="profile-head"></div>
+      <div class="seg" id="profile-seg"><button data-s="videos" class="on">Video</button><button data-s="saved" id="seg-saved">Disimpan</button></div>
+      <div class="tiles" id="profile-grid"></div>
+    </div>
+  </section>
+
+  <!-- Navigasi kaca cair -->
+  <nav class="nav glass" id="nav" aria-label="Navigasi utama">
+    <div class="pill" aria-hidden="true"></div>
+    <button data-v="home" class="on"><span data-ic="home"></span>Beranda</button>
+    <button data-v="live"><span data-ic="live"></span>Live</button>
+    <button data-v="add" class="add" aria-label="Unggah"><span class="plus" data-ic="plus"></span></button>
+    <button data-v="inbox"><span data-ic="inbox"></span>Inbox<span class="badge" id="badge"></span></button>
+    <button data-v="me"><span data-ic="user"></span>Profil</button>
+  </nav>
+
+  <!-- Sheet: nama pengguna -->
+  <div class="sheet" id="sh-welcome">
+    <div class="scrim"></div>
+    <div class="panel">
+      <h2>Selamat datang di o'tok</h2>
+      <p class="sub">Pilih nama pengguna. Video dan siaran live kamu akan tampil dengan nama ini.</p>
+      <input class="field" id="w-name" maxlength="20" placeholder="contoh: ooc.kreator" autocomplete="off" autocapitalize="off">
+      <div class="err" id="w-err"></div>
+      <button class="btn" id="w-ok" style="width:100%">Masuk</button>
+    </div>
+  </div>
+
+  <!-- Sheet: unggah -->
+  <div class="sheet" id="sh-upload">
+    <div class="scrim" data-close></div>
+    <div class="panel">
+      <div class="row"><h2>Unggah</h2><button class="round glass" data-close aria-label="Tutup" data-ic="close"></button></div>
+      <label class="drop" id="drop" for="file"><span data-ic="plus"></span><b id="drop-t">Pilih video atau foto</b><small>Video hingga 200 MB</small></label>
+      <input type="file" id="file" accept="video/*,image/*" hidden>
+      <textarea class="field" id="u-cap" maxlength="150" placeholder="Tulis keterangan dan #tagar…"></textarea>
+      <div class="err" id="u-err"></div>
+      <button class="btn" id="u-ok" style="width:100%" disabled>Unggah</button>
+    </div>
+  </div>
+
+  <!-- Sheet: komentar -->
+  <div class="sheet" id="sh-comments">
+    <div class="scrim" data-close></div>
+    <div class="panel">
+      <div class="row"><h2 id="c-title">Komentar</h2><button class="round glass" data-close aria-label="Tutup" data-ic="close"></button></div>
+      <div class="clist" id="c-list"></div>
+      <div class="sendrow"><input class="field" id="c-in" maxlength="140" placeholder="Tambahkan komentar…"><button class="btn" id="c-send">Kirim</button></div>
+    </div>
+  </div>
+
+  <!-- Sheet: bagikan -->
+  <div class="sheet" id="sh-share">
+    <div class="scrim" data-close></div>
+    <div class="panel">
+      <div class="row"><h2>Bagikan ke</h2><button class="round glass" data-close aria-label="Tutup" data-ic="close"></button></div>
+      <div class="share-grid">
+        <button data-share="copy"><span data-ic="link"></span>Salin tautan</button>
+        <button data-share="wa"><span class="sb" style="background:#25D366">WA</span>WhatsApp</button>
+        <button data-share="tg"><span class="sb" style="background:#27A7E7">TG</span>Telegram</button>
+        <button data-share="x"><span class="sb" style="background:#fff;color:#000">X</span>X</button>
+        <button data-share="native"><span data-ic="share"></span>Lainnya</button>
+      </div>
+      <button class="btn ghost" id="share-del" style="width:100%;margin-top:14px;display:none">Hapus video ini</button>
+    </div>
+  </div>
+
+  <!-- Sheet: mulai live -->
+  <div class="sheet" id="sh-golive">
+    <div class="scrim" data-close></div>
+    <div class="panel">
+      <div class="row"><h2>Mulai live</h2><button class="round glass" data-close aria-label="Tutup" data-ic="close"></button></div>
+      <p class="sub">Kamera dan mikrofon akan aktif. Siaran muncul di tab Live dan bisa ditonton siapa pun.</p>
+      <input class="field" id="g-title" maxlength="60" placeholder="Judul siaran">
+      <button class="btn" id="g-ok" style="width:100%">Mulai siaran</button>
+    </div>
+  </div>
+
+  <!-- Sheet: ubah profil -->
+  <div class="sheet" id="sh-edit">
+    <div class="scrim" data-close></div>
+    <div class="panel">
+      <div class="row"><h2>Ubah profil</h2><button class="round glass" data-close aria-label="Tutup" data-ic="close"></button></div>
+      <input class="field" id="e-name" maxlength="20" placeholder="Nama pengguna" autocapitalize="off">
+      <input class="field" id="e-bio" maxlength="80" placeholder="Bio singkat">
+      <div class="err" id="e-err"></div>
+      <button class="btn" id="e-ok" style="width:100%">Simpan perubahan</button>
+    </div>
+  </div>
+
+  <!-- Ruang live -->
+  <div class="overlay" id="room">
+    <div class="stage" id="stage"><div id="stage-wait">Menunggu siaran dimulai…</div></div>
+    <div class="hearts" id="hearts"></div>
+    <div class="room-top">
+      <div class="host-chip glass"><span id="room-av"></span><div><b id="room-host"></b><span id="room-title"></span></div></div>
+      <div class="eye glass"><span data-ic="eye" class="eye-ic"></span><b id="vcount">0</b></div>
+      <button class="round glass" id="room-close" aria-label="Keluar" data-ic="close"></button>
+      <button class="end" id="room-end">Akhiri</button>
+    </div>
+    <div class="chat-wrap">
+      <div class="chat" id="chat"></div>
+      <div class="chat-row">
+        <div class="chat-in glass"><input id="chat-input" maxlength="120" placeholder="Tulis komentar…"><button id="chat-send" aria-label="Kirim" data-ic="send"></button></div>
+        <button class="round glass heartbtn" id="heart-send" aria-label="Kirim suka" data-ic="heart"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pemutar video -->
+  <div class="overlay" id="player">
+    <button class="round glass close" id="player-close" aria-label="Tutup" data-ic="close"></button>
+    <div class="feed" id="player-feed"></div>
+  </div>
+
+  <div class="toast glass" id="toast" role="status"></div>
+</div>
+<script type="module" src="/js/app.js"></script>
+</body>
+</html>
