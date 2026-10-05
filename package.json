@@ -1,0 +1,13 @@
+{
+  "name": "otok",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "o'tok — video pendek, live, dan komunitas",
+  "engines": { "node": ">=18" },
+  "dependencies": {
+    "@upstash/redis": "^1.34.0",
+    "@vercel/blob": "^1.0.0",
+    "livekit-server-sdk": "^2.6.1"
+  }
+}
